@@ -112,11 +112,11 @@ def run_multi_bots(capital, data, tp, bo, so, os, ss, sos, mstc, profit_to_stock
 #minute '2021-06-07'
 #crash '2021-05-13'
 #after '2021-05-20'
-data_path = 'data/usd_1m'#'data/usd_1h_all'#'data/usd_1m'
-buffer_path = 'data/1m'#'data/usd_1h_2021'#'data/usd_1m')
-#data, filenames = load_data(data_path,
-#    dateutil.parser.parse('2021-01-01'), dateutil.parser.parse('2021-07-27'))
-#np.save(buffer_path, ([d[::1] for d in data], filenames))
+data_path = 'data/usd_1m'#usd_1h_all'#'data/usd_1h_all'#'data/usd_1m'
+buffer_path = 'data/1h'#'data/usd_1h_2021'#'data/usd_1m')
+# data, filenames = load_data(data_path,
+#    dateutil.parser.parse('2021-01-01'), dateutil.parser.parse('2021-05-12'))
+# np.save(buffer_path, ([d[::1] for d in data], filenames))
 data, filenames = np.load(buffer_path+'.npy', allow_pickle=True)
 #data = [d[:11053] for d in data][::-1]
 #print(data[0][:10], data[1][:10])
@@ -125,7 +125,7 @@ data, filenames = np.load(buffer_path+'.npy', allow_pickle=True)
 #data = [data[i] for i in range(len(data)) if i not in [1,3,8,9,13,14,16,21,22]]#worst: 3,8,9,13,16,22, bad: 1,14,21
 #filenames = [filenames[i] for i in range(len(filenames)) if i not in [1,3,8,9,13,14,16,21,22]]
 #data, filenames = data[14:15], filenames[14:15]
-data, filenames = data[-1:], filenames[-1:]
+# data, filenames = data[-1:], filenames[-1:]
 print([len(d) for d in data])
 print(filenames)
 
@@ -149,21 +149,24 @@ def run_n_bots(capital, data, n, tp, bo, so, os, ss, sos, mstc, profit_to_stock,
 #tp, bo, so, os, ss, sos, mstc
 def objective(trial):
     #n = trial.suggest_int('n', 3, 10)
-    #c = trial.suggest_int('c', 2000, 8000, 1000)
-    tp = trial.suggest_float('tp', 0.5, 5, step=0.5)
-    bo = trial.suggest_int('bo', 10, 10)
-    so = trial.suggest_int('so', 10, 30)
-    os = trial.suggest_float('os', 1, 5, step=0.1)
+    c = trial.suggest_int('c', 2000, 2000, 100)
+    tp = trial.suggest_float('tp', 2, 2, step=1)
+    bo = trial.suggest_int('bo', 10, 10, step=5)
+    so = trial.suggest_int('so', 10, 15, step=1)
+    os = trial.suggest_float('os', 1, 1.2, step=0.05)
     ss = trial.suggest_float('ss', 1, 1, step=0.1)
-    sos = trial.suggest_float('sos', 1, 5, step=0.1)
+    sos = trial.suggest_float('sos', 1, 1.2, step=0.05)
+    #mstc = trial.suggest_int('mstc', 1, 3)
     # result = [run_multi_bots(1000, [data[i]], tp, bo, so, os, ss, sos, 100)
     #     for i in range(len(data[:]))]
     # result = [run_n_bots(2000, data, 100, tp, bo, so, os, ss, sos, 100, False)
     #     for i in range(len(data))]
     # return np.mean([r[0] for r in result])
-    return run_multi_bots(2000, data, tp, bo, so, os, ss, sos, 30, False, True)[0]
+    results = run_multi_bots(c, data, tp, bo, so, os, ss, sos, 30, False, False)
+    return results[3] + results[1]/c
+    #return run_multi_bots(2000, data, tp, bo, so, os, ss, sos, 30, False, False)[0]
 
-study = optuna.create_study(direction='maximize')
+study = optuna.create_study(direction='maximize')#, sampler=optuna.samplers.GridSampler())
 #with parallel_backend('multiprocessing'):  # Overrides `prefer="threads"` to use multi-processing.
 study.optimize(objective, n_trials=100)#, n_jobs=6)
 print(study.best_params)
